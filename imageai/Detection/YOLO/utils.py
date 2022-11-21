@@ -137,11 +137,11 @@ def correct_yolo_boxes(boxes, image_h, image_w, net_h, net_w):
     else:
         new_h = net_w
         new_w = (image_w*net_h)/image_h
-        
+
+    x_offset, x_scale = (net_w - new_w)/2./net_w, float(new_w)/net_w
+    y_offset, y_scale = (net_h - new_h)/2./net_h, float(new_h)/net_h
+
     for i in range(len(boxes)):
-        x_offset, x_scale = (net_w - new_w)/2./net_w, float(new_w)/net_w
-        y_offset, y_scale = (net_h - new_h)/2./net_h, float(new_h)/net_h
-        
         boxes[i].xmin = int((boxes[i].xmin - x_offset) / x_scale * image_w)
         boxes[i].xmax = int((boxes[i].xmax - x_offset) / x_scale * image_w)
         boxes[i].ymin = int((boxes[i].ymin - y_offset) / y_scale * image_h)
@@ -179,16 +179,12 @@ def _interval_overlap(interval_a, interval_b):
     x1, x2 = interval_a
     x3, x4 = interval_b
 
-    if x3 < x1:
-        if x4 < x1:
-            return 0
-        else:
-            return min(x2,x4) - x1
+    if x3 < x1 and x4 < x1 or x3 >= x1 and x2 < x3:
+        return 0
+    elif x3 < x1:
+        return min(x2,x4) - x1
     else:
-        if x2 < x3:
-             return 0
-        else:
-            return min(x2,x4) - x3          
+        return min(x2,x4) - x3          
 
 def _sigmoid(x):
     return 1. / (1. + np.exp(-x))
@@ -243,14 +239,14 @@ def decode_netout(netout, anchors, obj_thresh, nms_thresh, net_h, net_w):
     for i in range(grid_h*grid_w):
         row = i / grid_w
         col = i % grid_w
-        
+
         for b in range(nb_box):
             # 4th element is objectness score
             objectness = netout[int(row)][int(col)][b][4]
             #objectness = netout[..., :4]
-            
+
             if(objectness.all() <= obj_thresh): continue
-            
+
             # first 4 elements are x, y, w, and h
             x, y, w, h = netout[int(row)][int(col)][b][:4]
 
@@ -258,10 +254,10 @@ def decode_netout(netout, anchors, obj_thresh, nms_thresh, net_h, net_w):
             y = (row + y) / grid_h # center position, unit: image height
             w = anchors[2 * b + 0] * np.exp(w) / net_w # unit: image width
             h = anchors[2 * b + 1] * np.exp(h) / net_h # unit: image height  
-            
+
             # last elements are class probabilities
             classes = netout[int(row)][col][b][5:]
-            
+
             box = BoundBox(x-w/2, y-h/2, x+w/2, y+h/2, objectness, classes)
             #box = BoundBox(x-w/2, y-h/2, x+w/2, y+h/2, None, classes)
 
@@ -310,34 +306,31 @@ def retrieve_yolo_detections(yolo_result, anchors, min_probability, nms_thresh, 
     # suppress non-maximal boxes
     do_nms(boxes, nms_thresh)
 
-    detections = list()
+    detections = []
     for box in boxes:
         label = -1
-        
+
         for i in range(len(labels_dict.keys())):
             if box.classes[i] > min_probability:
                 label = labels_dict[i]
-                
+
 
                 percentage_probability = box.classes[i] * 100
                 xmin = box.xmin
                 ymin = box.ymin
                 xmax = box.xmax
                 ymax = box.ymax
-                
-                if xmin < 0:
-                    xmin = 0
-                
-                if ymin < 0:
-                    ymin = 0
 
-                detection = dict()
-                detection["name"] = label
-                detection["percentage_probability"] = percentage_probability
-                detection["box_points"] = [ xmin, ymin, xmax, ymax]
+                xmin = max(xmin, 0)
+                ymin = max(ymin, 0)
+                detection = {
+                    "name": label,
+                    "percentage_probability": percentage_probability,
+                    "box_points": [xmin, ymin, xmax, ymax],
+                }
 
                 detections.append(detection)
-    
+
     return detections
 
 
@@ -350,14 +343,14 @@ def draw_boxes(image, box_points, draw_box, label, percentage_probability, color
 
     if label is not None:
         if percentage_probability is None:
-            label = "{}".format(label)
+            label = f"{label}"
         else:
             label = "{} {:.2f}%".format(label, percentage_probability)
     elif percentage_probability is not None:
         label = "{:.2f}".format(percentage_probability)
-    
+
     if label is not None or percentage_probability is not None:
         cv2.putText(image, label, (xmin, ymin - 13), cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * image.shape[0], (255, 0, 0), 2)
         cv2.putText(image, label, (xmin, ymin - 13), cv2.FONT_HERSHEY_SIMPLEX, 1e-3 * image.shape[0], (255, 255, 255), 1)
-        
+
     return image 

@@ -41,8 +41,16 @@ def evaluate(model,
         A dict mapping class names to mAP scores.
     """    
     # gather all detections and annotations
-    all_detections     = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
-    all_annotations    = [[None for i in range(generator.num_classes())] for j in range(generator.size())]
+    all_detections = [
+        [None for _ in range(generator.num_classes())]
+        for _ in range(generator.size())
+    ]
+
+    all_annotations = [
+        [None for _ in range(generator.num_classes())]
+        for _ in range(generator.size())
+    ]
+
 
     for i in range(generator.size()):
         raw_image = [generator.load_image(i)]
@@ -52,30 +60,30 @@ def evaluate(model,
 
         score = np.array([box.get_score() for box in pred_boxes])
         pred_labels = np.array([box.label for box in pred_boxes])        
-        
+
         if len(pred_boxes) > 0:
             pred_boxes = np.array([[box.xmin, box.ymin, box.xmax, box.ymax, box.get_score()] for box in pred_boxes]) 
         else:
             pred_boxes = np.array([[]])  
-        
+
         # sort the boxes and the labels according to scores
         score_sort = np.argsort(-score)
         pred_labels = pred_labels[score_sort]
         pred_boxes  = pred_boxes[score_sort]
-        
+
         # copy detections to all_detections
         for label in range(generator.num_classes()):
             all_detections[i][label] = pred_boxes[pred_labels == label, :]
 
         annotations = generator.load_annotation(i)
-        
+
         # copy detections to all_annotations
         for label in range(generator.num_classes()):
             all_annotations[i][label] = annotations[annotations[:, 4] == label, :4].copy()
 
     # compute mAP by comparing all detections and all annotations
     average_precisions = {}
-    
+
     for label in range(generator.num_classes()):
         false_positives = np.zeros((0,))
         true_positives  = np.zeros((0,))
@@ -140,11 +148,11 @@ def correct_yolo_boxes(boxes, image_h, image_w, net_h, net_w):
     else:
         new_h = net_w
         new_w = (image_w*net_h)/image_h
-        
+
+    x_offset, x_scale = (net_w - new_w)/2./net_w, float(new_w)/net_w
+    y_offset, y_scale = (net_h - new_h)/2./net_h, float(new_h)/net_h
+
     for i in range(len(boxes)):
-        x_offset, x_scale = (net_w - new_w)/2./net_w, float(new_w)/net_w
-        y_offset, y_scale = (net_h - new_h)/2./net_h, float(new_h)/net_h
-        
         boxes[i].xmin = int((boxes[i].xmin - x_offset) / x_scale * image_w)
         boxes[i].xmax = int((boxes[i].xmax - x_offset) / x_scale * image_w)
         boxes[i].ymin = int((boxes[i].ymin - y_offset) / y_scale * image_h)
@@ -188,14 +196,14 @@ def decode_netout(netout, anchors, obj_thresh, net_h, net_w):
     for i in range(grid_h*grid_w):
         row = i // grid_w
         col = i % grid_w
-        
+
         for b in range(nb_box):
             # 4th element is objectness score
             objectness = netout[row, col, b, 4]
-            
+
             if objectness <= obj_thresh:
                 continue
-            
+
             # first 4 elements are x, y, w, and h
             x, y, w, h = netout[row, col, b, :4]
 
@@ -203,10 +211,10 @@ def decode_netout(netout, anchors, obj_thresh, net_h, net_w):
             y = (row + y) / grid_h  # center position, unit: image height
             w = anchors[2 * b + 0] * np.exp(w) / net_w  # unit: image width
             h = anchors[2 * b + 1] * np.exp(h) / net_h  # unit: image height
-            
+
             # last elements are class probabilities
             classes = netout[row, col, b, 5:]
-            
+
             box = BoundBox(x-w/2, y-h/2, x+w/2, y+h/2, objectness, classes)
 
             boxes.append(box)
@@ -267,7 +275,7 @@ def get_yolo_boxes(model, images, net_h, net_w, anchors, obj_thresh, nms_thresh)
 
         # suppress non-maximal boxes
         do_nms(boxes, nms_thresh)        
-           
+
         batch_boxes[i] = boxes
 
     return batch_boxes        
@@ -324,9 +332,7 @@ def compute_ap(recall, precision):
     # where X axis (recall) changes value
     i = np.where(mrec[1:] != mrec[:-1])[0]
 
-    # and sum (\Delta recall) * prec
-    ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
-    return ap     
+    return np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])     
 
 
 def _softmax(x, axis=-1):

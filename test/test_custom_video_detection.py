@@ -23,9 +23,9 @@ def test_custom_video_detection_yolov3():
     detector.loadModel()
     video_path = detector.detectObjectsFromVideo(input_file_path=video_file, output_file_path=video_file_output, save_detected_video=True, frames_per_second=30, log_progress=True)
 
-    assert os.path.exists(video_file_output + ".avi")
+    assert os.path.exists(f"{video_file_output}.avi")
     assert isinstance(video_path, str)
-    os.remove(video_file_output + ".avi")
+    os.remove(f"{video_file_output}.avi")
 
 
 
@@ -38,9 +38,9 @@ def test_custom_video_detection_yolov3_analysis():
     detector.loadModel()
     video_path = detector.detectObjectsFromVideo(input_file_path=video_file, output_file_path=video_file_output, save_detected_video=True, frames_per_second=30, log_progress=True, per_frame_function=forFrame, per_second_function=forSecond, return_detected_frame=True)
 
-    assert os.path.exists(video_file_output + ".avi")
+    assert os.path.exists(f"{video_file_output}.avi")
     assert isinstance(video_path, str)
-    os.remove(video_file_output + ".avi")
+    os.remove(f"{video_file_output}.avi")
 
 
 
