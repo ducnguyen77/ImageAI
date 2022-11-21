@@ -22,9 +22,9 @@ def test_video_detection_retinanet():
     detector.loadModel(detection_speed="fastest")
     video_path = detector.detectObjectsFromVideo(input_file_path=video_file, output_file_path=video_file_output, save_detected_video=True, frames_per_second=30, log_progress=True)
 
-    assert os.path.exists(video_file_output + ".avi")
+    assert os.path.exists(f"{video_file_output}.avi")
     assert isinstance(video_path, str)
-    os.remove(video_file_output + ".avi")
+    os.remove(f"{video_file_output}.avi")
 
 
 
@@ -38,9 +38,9 @@ def test_video_detection_yolov3():
     detector.loadModel(detection_speed="faster")
     video_path = detector.detectObjectsFromVideo(input_file_path=video_file, output_file_path=video_file_output, save_detected_video=True, frames_per_second=30, log_progress=True)
 
-    assert os.path.exists(video_file_output + ".avi")
+    assert os.path.exists(f"{video_file_output}.avi")
     assert isinstance(video_path, str)
-    os.remove(video_file_output + ".avi")
+    os.remove(f"{video_file_output}.avi")
 
 
 
@@ -52,9 +52,9 @@ def test_video_detection_tiny_yolov3():
     detector.loadModel(detection_speed="fast")
     video_path = detector.detectObjectsFromVideo(input_file_path=video_file, output_file_path=video_file_output, save_detected_video=True, frames_per_second=30, log_progress=True)
 
-    assert os.path.exists(video_file_output + ".avi")
+    assert os.path.exists(f"{video_file_output}.avi")
     assert isinstance(video_path, str)
-    os.remove(video_file_output + ".avi")
+    os.remove(f"{video_file_output}.avi")
 
 
 
@@ -68,9 +68,9 @@ def test_video_detection_retinanet_analysis():
     detector.loadModel(detection_speed="fastest")
     video_path = detector.detectObjectsFromVideo(input_file_path=video_file, output_file_path=video_file_output, save_detected_video=True, frames_per_second=30, log_progress=True, per_frame_function=forFrame, per_second_function=forSecond, return_detected_frame=True)
 
-    assert os.path.exists(video_file_output + ".avi")
+    assert os.path.exists(f"{video_file_output}.avi")
     assert isinstance(video_path, str)
-    os.remove(video_file_output + ".avi")
+    os.remove(f"{video_file_output}.avi")
 
 
 def forFrame(frame_number, output_array, output_count, detected_frame):
@@ -83,7 +83,7 @@ def forFrame(frame_number, output_array, output_count, detected_frame):
     assert isinstance(output_array[0]["box_points"], list)
 
     assert isinstance(output_count, dict)
-    for a_key in dict(output_count).keys():
+    for a_key in dict(output_count):
         assert isinstance(a_key, str)
         assert isinstance(output_count[a_key], int)
 
@@ -100,11 +100,11 @@ def forSecond(second_number, output_arrays, count_arrays, average_output_count, 
 
     assert isinstance(count_arrays, list)
     assert isinstance(count_arrays[0], dict)
-    for a_key in dict(count_arrays[0]).keys():
+    for a_key in dict(count_arrays[0]):
         assert isinstance(a_key, str)
         assert isinstance(count_arrays[0][a_key], int)
 
     assert isinstance(average_output_count, dict)
-    for a_key2 in dict(average_output_count).keys():
+    for a_key2 in dict(average_output_count):
         assert isinstance(a_key2, str)
         assert isinstance(average_output_count[a_key2], int)

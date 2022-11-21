@@ -36,7 +36,7 @@ def test_object_detection_retinanet():
 
     assert isinstance(results2, list)
     assert isinstance(extracted_paths, list)
-    assert os.path.isdir(os.path.join(image_output + "-objects"))
+    assert os.path.isdir(os.path.join(f"{image_output}-objects"))
     for result2 in results2:
         assert isinstance(result2["name"], str)
         assert isinstance(result2["percentage_probability"], float)
@@ -45,7 +45,7 @@ def test_object_detection_retinanet():
     for extracted_path in extracted_paths:
         assert os.path.exists(extracted_path)
 
-    shutil.rmtree(os.path.join(image_output + "-objects"))
+    shutil.rmtree(os.path.join(f"{image_output}-objects"))
 
 
 
@@ -73,7 +73,7 @@ def test_object_detection_yolov3():
 
     assert isinstance(results2, list)
     assert isinstance(extracted_paths, list)
-    assert os.path.isdir(os.path.join(image_output + "-objects"))
+    assert os.path.isdir(os.path.join(f"{image_output}-objects"))
     for result2 in results2:
         assert isinstance(result2["name"], str)
         assert isinstance(result2["percentage_probability"], float)
@@ -82,7 +82,7 @@ def test_object_detection_yolov3():
     for extracted_path in extracted_paths:
         assert os.path.exists(extracted_path)
 
-    shutil.rmtree(os.path.join(image_output + "-objects"))
+    shutil.rmtree(os.path.join(f"{image_output}-objects"))
 
 
 
@@ -109,7 +109,7 @@ def test_object_detection_tiny_yolov3():
 
     assert isinstance(results2, list)
     assert isinstance(extracted_paths, list)
-    assert os.path.isdir(os.path.join(image_output + "-objects"))
+    assert os.path.isdir(os.path.join(f"{image_output}-objects"))
     for result2 in results2:
         assert isinstance(result2["name"], str)
         assert isinstance(result2["percentage_probability"], float)
@@ -118,7 +118,7 @@ def test_object_detection_tiny_yolov3():
     for extracted_path in extracted_paths:
         assert os.path.exists(extracted_path)
 
-    shutil.rmtree(os.path.join(image_output + "-objects"))
+    shutil.rmtree(os.path.join(f"{image_output}-objects"))
 
 
 

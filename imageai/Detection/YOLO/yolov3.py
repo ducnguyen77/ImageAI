@@ -42,7 +42,7 @@ class YoloLayer(Layer):
 
         # adjust the shape of the y_predict [batch, grid_h, grid_w, 3, 4+1+nb_class]
         y_pred = tf.reshape(y_pred, tf.concat([tf.shape(y_pred)[:3], tf.constant([3, -1])], axis=0))
-        
+
         # initialize the masks
         object_mask     = tf.expand_dims(y_true[..., 4], 4)
 
@@ -57,7 +57,7 @@ class YoloLayer(Layer):
         net_h       = tf.shape(input_image)[1]
         net_w       = tf.shape(input_image)[2]            
         net_factor  = tf.reshape(tf.cast([net_w, net_h], tf.float32), [1,1,1,1,2])
-        
+
         """
         Adjust prediction
         """
@@ -83,14 +83,14 @@ class YoloLayer(Layer):
         # then, ignore the boxes which have good overlap with some true box
         true_xy = true_boxes[..., 0:2] / grid_factor
         true_wh = true_boxes[..., 2:4] / net_factor
-        
+
         true_wh_half = true_wh / 2.
         true_mins    = true_xy - true_wh_half
         true_maxes   = true_xy + true_wh_half
-        
+
         pred_xy = tf.expand_dims(pred_box_xy / grid_factor, 4)
         pred_wh = tf.expand_dims(tf.exp(pred_box_wh) * self.anchors / net_factor, 4)
-        
+
         pred_wh_half = pred_wh / 2.
         pred_mins    = pred_xy - pred_wh_half
         pred_maxes   = pred_xy + pred_wh_half    
@@ -100,7 +100,7 @@ class YoloLayer(Layer):
 
         intersect_wh    = tf.maximum(intersect_maxes - intersect_mins, 0.)
         intersect_areas = intersect_wh[..., 0] * intersect_wh[..., 1]
-        
+
         true_areas = true_wh[..., 0] * true_wh[..., 1]
         pred_areas = pred_wh[..., 0] * pred_wh[..., 1]
 
@@ -122,7 +122,7 @@ class YoloLayer(Layer):
 
         pred_xy = pred_box_xy / grid_factor
         pred_wh = tf.exp(pred_box_wh) * self.anchors / net_factor 
-        
+
         pred_wh_half = pred_wh / 2.
         pred_mins    = pred_xy - pred_wh_half
         pred_maxes   = pred_xy + pred_wh_half      
@@ -131,14 +131,14 @@ class YoloLayer(Layer):
         intersect_maxes = tf.minimum(pred_maxes, true_maxes)
         intersect_wh    = tf.maximum(intersect_maxes - intersect_mins, 0.)
         intersect_areas = intersect_wh[..., 0] * intersect_wh[..., 1]
-        
+
         true_areas = true_wh[..., 0] * true_wh[..., 1]
         pred_areas = pred_wh[..., 0] * pred_wh[..., 1]
 
         union_areas = pred_areas + true_areas - intersect_areas
         iou_scores  = tf.truediv(intersect_areas, union_areas)
         iou_scores  = object_mask * tf.expand_dims(iou_scores, 4)
-        
+
         count       = tf.reduce_sum(object_mask)
         count_noobj = tf.reduce_sum(1 - object_mask)
         detect_mask = tf.cast((pred_box_conf*object_mask >= 0.5), dtype=tf.float32)
@@ -154,7 +154,7 @@ class YoloLayer(Layer):
         Warm-up training
         """
         batch_seen = tf.compat.v1.assign_add(batch_seen, 1.)
-        
+
         true_box_xy, true_box_wh, xywh_mask = tf.cond(tf.less(batch_seen, self.warmup_batches+1), 
                               lambda: [true_box_xy + (0.5 + self.cell_grid[:,:grid_h,:grid_w,:,:]) * (1-object_mask), 
                                        true_box_wh + tf.zeros_like(true_box_wh) * (1-object_mask), 
@@ -173,8 +173,8 @@ class YoloLayer(Layer):
         wh_delta    = xywh_mask   * (pred_box_wh-true_box_wh) * wh_scale * self.xywh_scale
         conf_delta  = object_mask * (pred_box_conf-true_box_conf) * self.obj_scale + (1-object_mask) * conf_delta * self.noobj_scale
         class_delta = object_mask * \
-                      tf.expand_dims(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_box_class, logits=pred_box_class), 4) * \
-                      self.class_scale
+                          tf.expand_dims(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=true_box_class, logits=pred_box_class), 4) * \
+                          self.class_scale
 
         loss_xy    = tf.reduce_sum(tf.square(xy_delta),       list(range(1,5)))
         loss_wh    = tf.reduce_sum(tf.square(wh_delta),       list(range(1,5)))
@@ -205,7 +205,7 @@ def residual_block(input, channels, num_blocks):
     network = ZeroPadding2D(((1,0), (1,0)))(input)
     network = NetworkConv2D_BN_Leaky(input=network,channels=channels, kernel_size=(3,3), strides=(2,2), padding="valid")
 
-    for blocks in range(num_blocks):
+    for _ in range(num_blocks):
         network_1 = NetworkConv2D_BN_Leaky(input=network, channels= channels // 2, kernel_size=(1,1))
         network_1 = NetworkConv2D_BN_Leaky(input=network_1,channels= channels, kernel_size=(3,3))
 
